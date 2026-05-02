@@ -1,0 +1,1576 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-1.9.37">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+<meta name="author" content="Florian Klaver">
+<meta name="dcterms.date" content="2026-05-02">
+
+<title>Solution for Movement Analysis 1</title>
+<style>
+/* Default styles provided by pandoc.
+** See https://pandoc.org/MANUAL.html#variables-for-html for config info.
+*/
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+div.columns{display: flex; gap: min(4vw, 1.5em);}
+div.column{flex: auto; overflow-x: auto;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+ul.task-list li input[type="checkbox"] {
+  width: 0.8em;
+  margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
+  vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+html { -webkit-text-size-adjust: 100%; }
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+</style>
+
+
+<script src="index_files/libs/clipboard/clipboard.min.js"></script>
+<script src="index_files/libs/quarto-html/quarto.js" type="module"></script>
+<script src="index_files/libs/quarto-html/tabsets/tabsets.js" type="module"></script>
+<script src="index_files/libs/quarto-html/popper.min.js"></script>
+<script src="index_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="index_files/libs/quarto-html/anchor.min.js"></script>
+<link href="index_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link href="index_files/libs/quarto-html/quarto-syntax-highlighting-7f8f88aac4f3542376d5c11b86a4c14d.css" rel="stylesheet" id="quarto-text-highlighting-styles">
+<script src="index_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="index_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="index_files/libs/bootstrap/bootstrap-efbb37e9afcc02144ebbc7afd12a776f.min.css" rel="stylesheet" append-hash="true" id="quarto-bootstrap" data-mode="light">
+
+
+</head>
+
+<body class="fullcontent quarto-light">
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">Solution for Movement Analysis 1</h1>
+</div>
+
+
+
+<div class="quarto-title-meta">
+
+    <div>
+    <div class="quarto-title-meta-heading">Author</div>
+    <div class="quarto-title-meta-contents">
+             <p>Florian Klaver </p>
+          </div>
+  </div>
+    
+    <div>
+    <div class="quarto-title-meta-heading">Published</div>
+    <div class="quarto-title-meta-contents">
+      <p class="date">May 2, 2026</p>
+    </div>
+  </div>
+  
+    
+  </div>
+  
+
+
+</header>
+
+
+<p>In this document, I solve the task for <em>Movement Analysis I</em> of the course <em>Spatiotemporal Datascience</em>.</p>
+<section id="task" class="level1">
+<h1>Task</h1>
+<p>Your goal is to predict the transportation mode for each individual point in the validation dataset. The minimal example shows a simpler per-segment approach as a starting point — your task is to extend it to per-point predictions.</p>
+<p>To do so, you will need to:</p>
+<p>1 <strong>Feature Engineering:</strong> Create features that capture movement behaviour at the point level. For example, you could consider turning angles, stop durations, or varying the observation window size.<br>
+2. <strong>Model Selection:</strong> Experiment with different models (e.g., random forests, gradient boosting, neural networks) and hyperparameters to improve predictive performance.</p>
+</section>
+<section id="solutions" class="level1">
+<h1>Solutions</h1>
+<section id="structure" class="level2">
+<h2 class="anchored" data-anchor-id="structure">Structure</h2>
+<ol type="1">
+<li><strong>Data exploration:</strong> Understand the structure, scale and class distribution of the dataset.</li>
+<li><strong>Feature engineering:</strong> Derive movement parameters at the point level and over different observation windows.</li>
+<li><strong>Model training:</strong> Fit and tune classification models on the per-point features.</li>
+<li><strong>Evaluation:</strong> Assess model performance on the testing set and discuss strengths and weaknesses.</li>
+<li><strong>Prediction:</strong> Apply the final model to the unlabeled validation set.</li>
+</ol>
+</section>
+<section id="preparation" class="level2">
+<h2 class="anchored" data-anchor-id="preparation">Preparation</h2>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb1"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Set working directory</span></span>
+<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a><span class="fu">setwd</span>(<span class="st">"C:/Workspace/ZHAW/6_Semester/STDS/movement-analysis-1"</span>)</span>
+<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a><span class="co"># Set seed for reproducibility</span></span>
+<span id="cb1-5"><a href="#cb1-5" aria-hidden="true" tabindex="-1"></a><span class="fu">set.seed</span>(<span class="dv">42</span>)</span>
+<span id="cb1-6"><a href="#cb1-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb1-7"><a href="#cb1-7" aria-hidden="true" tabindex="-1"></a><span class="co"># Load libraries</span></span>
+<span id="cb1-8"><a href="#cb1-8" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(sf)        </span>
+<span id="cb1-9"><a href="#cb1-9" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(dplyr)     </span>
+<span id="cb1-10"><a href="#cb1-10" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ggplot2)  </span>
+<span id="cb1-11"><a href="#cb1-11" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(forcats)   </span>
+<span id="cb1-12"><a href="#cb1-12" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tmap)</span>
+<span id="cb1-13"><a href="#cb1-13" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(zoo)</span>
+<span id="cb1-14"><a href="#cb1-14" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(caret)</span>
+<span id="cb1-15"><a href="#cb1-15" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(ranger)</span>
+<span id="cb1-16"><a href="#cb1-16" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(tidyr)     </span>
+<span id="cb1-17"><a href="#cb1-17" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(knitr)</span>
+<span id="cb1-18"><a href="#cb1-18" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpart)</span>
+<span id="cb1-19"><a href="#cb1-19" aria-hidden="true" tabindex="-1"></a><span class="fu">library</span>(rpart.plot)     </span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="load-data" class="level3">
+<h3 class="anchored" data-anchor-id="load-data">Load Data</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb2"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Inspect the layers in the GeoPackage</span></span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a><span class="fu">st_layers</span>(<span class="st">"data/tracks_1.gpkg"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Driver: GPKG 
+Available layers:
+  layer_name geometry_type features fields              crs_name
+1   training         Point   501432      5 WGS 84 / UTM zone 50N
+2    testing         Point   262851      5 WGS 84 / UTM zone 50N
+3 validation         Point   240449      4 WGS 84 / UTM zone 50N</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb4"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Read each layer and tag the split it came from</span></span>
+<span id="cb4-2"><a href="#cb4-2" aria-hidden="true" tabindex="-1"></a>training_dataset <span class="ot">&lt;-</span> <span class="fu">read_sf</span>(<span class="st">"data/tracks_1.gpkg"</span>, <span class="at">layer =</span> <span class="st">"training"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-3"><a href="#cb4-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data =</span> <span class="st">"training"</span>)</span>
+<span id="cb4-4"><a href="#cb4-4" aria-hidden="true" tabindex="-1"></a>testing_dataset  <span class="ot">&lt;-</span> <span class="fu">read_sf</span>(<span class="st">"data/tracks_1.gpkg"</span>, <span class="at">layer =</span> <span class="st">"testing"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-5"><a href="#cb4-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data =</span> <span class="st">"testing"</span>)</span>
+<span id="cb4-6"><a href="#cb4-6" aria-hidden="true" tabindex="-1"></a>validation_dataset <span class="ot">&lt;-</span> <span class="fu">read_sf</span>(<span class="st">"data/tracks_1.gpkg"</span>, <span class="at">layer =</span> <span class="st">"validation"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb4-7"><a href="#cb4-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">data =</span> <span class="st">"validation"</span>)</span>
+<span id="cb4-8"><a href="#cb4-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-9"><a href="#cb4-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb4-10"><a href="#cb4-10" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(training_dataset, testing_dataset, validation_dataset)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+</section>
+<section id="step-1-data-exploration" class="level2">
+<h2 class="anchored" data-anchor-id="step-1-data-exploration">Step 1: Data Exploration</h2>
+<p>Before any feature engineering or modelling, I want to understand data i am working with: how many points, how many tracks, how the transportation modes are distributed across the splits, etc.. For this I conduct a small EDA.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb5"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Column overview</span></span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a><span class="fu">glimpse</span>(full_dataset)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Rows: 1,004,732
+Columns: 7
+$ user_id  &lt;int&gt; 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 1…
+$ track_id &lt;int&gt; 95, 95, 95, 95, 95, 95, 95, 95, 95, 95, 95, 95, 95, 95, 95, 9…
+$ datetime &lt;dttm&gt; 2008-06-18 16:47:35, 2008-06-18 16:47:37, 2008-06-18 16:47:3…
+$ alt      &lt;dbl&gt; 161, 161, 161, 161, 161, 161, 161, 157, 157, 157, 157, 154, 1…
+$ mode     &lt;chr&gt; "bus", "bus", "bus", "bus", "bus", "bus", "bus", "bus", "bus"…
+$ geom     &lt;POINT [m]&gt; POINT (454778.1 4419210), POINT (454775 4419210), POINT…
+$ data     &lt;chr&gt; "training", "training", "training", "training", "training", "…</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb7"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Number of points and distinct tracks per split</span></span>
+<span id="cb7-2"><a href="#cb7-2" aria-hidden="true" tabindex="-1"></a>split_overview <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb7-3"><a href="#cb7-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb7-4"><a href="#cb7-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(data) <span class="sc">|&gt;</span></span>
+<span id="cb7-5"><a href="#cb7-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb7-6"><a href="#cb7-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_points =</span> <span class="fu">n</span>(),</span>
+<span id="cb7-7"><a href="#cb7-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_tracks =</span> <span class="fu">n_distinct</span>(track_id),</span>
+<span id="cb7-8"><a href="#cb7-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups  =</span> <span class="st">"drop"</span></span>
+<span id="cb7-9"><a href="#cb7-9" aria-hidden="true" tabindex="-1"></a>  )</span>
+<span id="cb7-10"><a href="#cb7-10" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb7-11"><a href="#cb7-11" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(split_overview, <span class="at">caption =</span> <span class="st">"Number of points and tracks per split"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Number of points and tracks per split</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">data</th>
+<th style="text-align: right;">n_points</th>
+<th style="text-align: right;">n_tracks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">testing</td>
+<td style="text-align: right;">262851</td>
+<td style="text-align: right;">561</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">training</td>
+<td style="text-align: right;">501432</td>
+<td style="text-align: right;">1048</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">validation</td>
+<td style="text-align: right;">240449</td>
+<td style="text-align: right;">518</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb8"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb8-1"><a href="#cb8-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Time range covered by the data</span></span>
+<span id="cb8-2"><a href="#cb8-2" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb8-3"><a href="#cb8-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb8-4"><a href="#cb8-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb8-5"><a href="#cb8-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">first_timestamp =</span> <span class="fu">min</span>(datetime, <span class="at">na.rm =</span> <span class="cn">TRUE</span>),</span>
+<span id="cb8-6"><a href="#cb8-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">last_timestamp  =</span> <span class="fu">max</span>(datetime, <span class="at">na.rm =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb8-7"><a href="#cb8-7" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code># A tibble: 1 × 2
+  first_timestamp     last_timestamp     
+  &lt;dttm&gt;              &lt;dttm&gt;             
+1 2007-04-15 02:52:14 2011-12-31 16:16:37</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb10"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Coordinate reference system</span></span>
+<span id="cb10-2"><a href="#cb10-2" aria-hidden="true" tabindex="-1"></a><span class="fu">st_crs</span>(full_dataset)<span class="sc">$</span>Name</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>[1] "WGS 84 / UTM zone 50N"</code></pre>
+</div>
+</div>
+<section id="class-distribution" class="level3">
+<h3 class="anchored" data-anchor-id="class-distribution">Class distribution</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb12"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Counts per transportation mode within the labelled splits</span></span>
+<span id="cb12-2"><a href="#cb12-2" aria-hidden="true" tabindex="-1"></a>class_distribution <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb12-3"><a href="#cb12-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb12-4"><a href="#cb12-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(mode)) <span class="sc">|&gt;</span></span>
+<span id="cb12-5"><a href="#cb12-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(data, mode) <span class="sc">|&gt;</span></span>
+<span id="cb12-6"><a href="#cb12-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(</span>
+<span id="cb12-7"><a href="#cb12-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_points =</span> <span class="fu">n</span>(),</span>
+<span id="cb12-8"><a href="#cb12-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">n_tracks =</span> <span class="fu">n_distinct</span>(track_id),</span>
+<span id="cb12-9"><a href="#cb12-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">.groups  =</span> <span class="st">"drop"</span></span>
+<span id="cb12-10"><a href="#cb12-10" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb12-11"><a href="#cb12-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(data, <span class="fu">desc</span>(n_points))</span>
+<span id="cb12-12"><a href="#cb12-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb12-13"><a href="#cb12-13" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(class_distribution, <span class="at">caption =</span> <span class="st">"Class distribution in the labelled splits"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Class distribution in the labelled splits</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">data</th>
+<th style="text-align: left;">mode</th>
+<th style="text-align: right;">n_points</th>
+<th style="text-align: right;">n_tracks</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">testing</td>
+<td style="text-align: left;">bus</td>
+<td style="text-align: right;">79469</td>
+<td style="text-align: right;">146</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">testing</td>
+<td style="text-align: left;">walk</td>
+<td style="text-align: right;">67727</td>
+<td style="text-align: right;">181</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">testing</td>
+<td style="text-align: left;">bike</td>
+<td style="text-align: right;">60978</td>
+<td style="text-align: right;">101</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">testing</td>
+<td style="text-align: left;">car</td>
+<td style="text-align: right;">36667</td>
+<td style="text-align: right;">83</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">testing</td>
+<td style="text-align: left;">subway</td>
+<td style="text-align: right;">14918</td>
+<td style="text-align: right;">44</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">testing</td>
+<td style="text-align: left;">train</td>
+<td style="text-align: right;">3092</td>
+<td style="text-align: right;">6</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">training</td>
+<td style="text-align: left;">walk</td>
+<td style="text-align: right;">172436</td>
+<td style="text-align: right;">389</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">training</td>
+<td style="text-align: left;">bus</td>
+<td style="text-align: right;">137667</td>
+<td style="text-align: right;">246</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">training</td>
+<td style="text-align: left;">bike</td>
+<td style="text-align: right;">108170</td>
+<td style="text-align: right;">177</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">training</td>
+<td style="text-align: left;">car</td>
+<td style="text-align: right;">56118</td>
+<td style="text-align: right;">160</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">training</td>
+<td style="text-align: left;">subway</td>
+<td style="text-align: right;">23952</td>
+<td style="text-align: right;">66</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">training</td>
+<td style="text-align: left;">train</td>
+<td style="text-align: right;">3089</td>
+<td style="text-align: right;">10</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb13"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Reorder modes by total count for a cleaner plot</span></span>
+<span id="cb13-2"><a href="#cb13-2" aria-hidden="true" tabindex="-1"></a>mode_order <span class="ot">&lt;-</span> class_distribution <span class="sc">|&gt;</span></span>
+<span id="cb13-3"><a href="#cb13-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mode) <span class="sc">|&gt;</span></span>
+<span id="cb13-4"><a href="#cb13-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="at">total =</span> <span class="fu">sum</span>(n_points), <span class="at">.groups =</span> <span class="st">"drop"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb13-5"><a href="#cb13-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(total) <span class="sc">|&gt;</span></span>
+<span id="cb13-6"><a href="#cb13-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pull</span>(mode)</span>
+<span id="cb13-7"><a href="#cb13-7" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb13-8"><a href="#cb13-8" aria-hidden="true" tabindex="-1"></a>class_distribution <span class="sc">|&gt;</span></span>
+<span id="cb13-9"><a href="#cb13-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mode =</span> <span class="fu">factor</span>(mode, <span class="at">levels =</span> mode_order)) <span class="sc">|&gt;</span></span>
+<span id="cb13-10"><a href="#cb13-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> n_points, <span class="at">y =</span> mode, <span class="at">fill =</span> data)) <span class="sc">+</span></span>
+<span id="cb13-11"><a href="#cb13-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb13-12"><a href="#cb13-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>comma) <span class="sc">+</span></span>
+<span id="cb13-13"><a href="#cb13-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb13-14"><a href="#cb13-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Number of GPS points per transportation mode"</span>,</span>
+<span id="cb13-15"><a href="#cb13-15" aria-hidden="true" tabindex="-1"></a>    <span class="at">x =</span> <span class="st">"Number of points"</span>,</span>
+<span id="cb13-16"><a href="#cb13-16" aria-hidden="true" tabindex="-1"></a>    <span class="at">y =</span> <span class="st">"Transportation mode"</span>,</span>
+<span id="cb13-17"><a href="#cb13-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">fill =</span> <span class="st">"Split"</span></span>
+<span id="cb13-18"><a href="#cb13-18" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb13-19"><a href="#cb13-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-6-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="spatial-overview" class="level3">
+<h3 class="anchored" data-anchor-id="spatial-overview">Spatial overview</h3>
+<p>Plotting all 1M+ points would be slow, I therefore work with a random sample for the overview map.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb14"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Sample for performance</span></span>
+<span id="cb14-2"><a href="#cb14-2" aria-hidden="true" tabindex="-1"></a>overview_sample <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb14-3"><a href="#cb14-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">50000</span>)</span>
+<span id="cb14-4"><a href="#cb14-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-5"><a href="#cb14-5" aria-hidden="true" tabindex="-1"></a><span class="fu">tmap_mode</span>(<span class="st">"plot"</span>)</span>
+<span id="cb14-6"><a href="#cb14-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb14-7"><a href="#cb14-7" aria-hidden="true" tabindex="-1"></a><span class="fu">tm_shape</span>(overview_sample) <span class="sc">+</span></span>
+<span id="cb14-8"><a href="#cb14-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_dots</span>(<span class="at">col =</span> <span class="st">"data"</span>, <span class="at">size =</span> <span class="fl">0.02</span>, <span class="at">alpha =</span> <span class="fl">0.4</span>, <span class="at">palette =</span> <span class="st">"Set1"</span>) <span class="sc">+</span></span>
+<span id="cb14-9"><a href="#cb14-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">tm_layout</span>(<span class="at">legend.outside =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb14-10"><a href="#cb14-10" aria-hidden="true" tabindex="-1"></a>            <span class="at">main.title =</span> <span class="st">"Spatial coverage of the three splits (50k-point sample)"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-7-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+<p>To get a feel for how different transportation modes look spatially, I also plot a small random sample of labelled tracks, coloured by mode.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb15"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Pick a few random tracks per mode for visual comparison</span></span>
+<span id="cb15-2"><a href="#cb15-2" aria-hidden="true" tabindex="-1"></a>example_tracks <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb15-3"><a href="#cb15-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb15-4"><a href="#cb15-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(mode)) <span class="sc">|&gt;</span></span>
+<span id="cb15-5"><a href="#cb15-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">distinct</span>(mode, track_id) <span class="sc">|&gt;</span></span>
+<span id="cb15-6"><a href="#cb15-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">group_by</span>(mode) <span class="sc">|&gt;</span></span>
+<span id="cb15-7"><a href="#cb15-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">4</span>) <span class="sc">|&gt;</span></span>
+<span id="cb15-8"><a href="#cb15-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ungroup</span>()</span>
+<span id="cb15-9"><a href="#cb15-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-10"><a href="#cb15-10" aria-hidden="true" tabindex="-1"></a>example_points <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb15-11"><a href="#cb15-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">semi_join</span>(example_tracks, <span class="at">by =</span> <span class="fu">c</span>(<span class="st">"mode"</span>, <span class="st">"track_id"</span>))</span>
+<span id="cb15-12"><a href="#cb15-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb15-13"><a href="#cb15-13" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(example_points) <span class="sc">+</span></span>
+<span id="cb15-14"><a href="#cb15-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_sf</span>(<span class="fu">aes</span>(<span class="at">color =</span> mode), <span class="at">size =</span> <span class="fl">0.2</span>, <span class="at">alpha =</span> <span class="fl">0.6</span>) <span class="sc">+</span></span>
+<span id="cb15-15"><a href="#cb15-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> mode) <span class="sc">+</span></span>
+<span id="cb15-16"><a href="#cb15-16" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(</span>
+<span id="cb15-17"><a href="#cb15-17" aria-hidden="true" tabindex="-1"></a>    <span class="at">title =</span> <span class="st">"Example trajectories per transportation mode"</span>,</span>
+<span id="cb15-18"><a href="#cb15-18" aria-hidden="true" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">"Mode"</span></span>
+<span id="cb15-19"><a href="#cb15-19" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb15-20"><a href="#cb15-20" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb15-21"><a href="#cb15-21" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>,</span>
+<span id="cb15-22"><a href="#cb15-22" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.text =</span> <span class="fu">element_blank</span>(),</span>
+<span id="cb15-23"><a href="#cb15-23" aria-hidden="true" tabindex="-1"></a>        <span class="at">axis.ticks =</span> <span class="fu">element_blank</span>())</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-8-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="takeaways-from-this-exploration" class="level3">
+<h3 class="anchored" data-anchor-id="takeaways-from-this-exploration">Takeaways from this exploration</h3>
+<ul>
+<li><strong>Class imbalance</strong>: Among the labelled data, <code>walk</code> and <code>bus</code> are the most frequent modes, while <code>train</code> and <code>subway</code> are clearly underrepresented. Per-point classification will therefore have to deal with this imbalance.</li>
+<li><strong>Spatial scale</strong>: The example trajectories show very different spatial signatures: <code>walk</code> and <code>bike</code> produce dense, curvy traces over short distances, while <code>train</code> and <code>subway</code> produce long, very straight lines. This is a strong hint that features capturing <em>straightness/sinuosity over different window sizes</em> as well as <em>speed and acceleration</em> should be informative on a per-point basis.</li>
+<li><strong>Projected coordinates</strong>: Because the geometry is already in UTM 50N, subsequent calculations of <code>steplength</code>, <code>speed</code> and <code>acceleration</code> can use Euclidean distances in metres without further projection.</li>
+</ul>
+</section>
+</section>
+<section id="step-2-feature-eingineering" class="level2">
+<h2 class="anchored" data-anchor-id="step-2-feature-eingineering">Step 2: Feature eingineering</h2>
+<p>For per-point classification each point has to carry enough information on its own. I compute features at three scopes: instantaneous parameters (steplength, timelag, speed, acceleration, turning angle), short-window dynamics (rolling mean / sd of speed and acceleration), sinuosity at three window sizes (5, 11, 21 points), and a stop duration feature that counts near-stationary points in a local window to capture waiting behaviour at e.g.&nbsp;bus stops or traffic lights.</p>
+<p>I extract <code>x</code> and <code>y</code> from the geometry once and use them throughout.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb16"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" aria-hidden="true" tabindex="-1"></a>coords <span class="ot">&lt;-</span> <span class="fu">st_coordinates</span>(full_dataset)</span>
+<span id="cb16-2"><a href="#cb16-2" aria-hidden="true" tabindex="-1"></a>full_dataset<span class="sc">$</span>x <span class="ot">&lt;-</span> coords[, <span class="dv">1</span>]</span>
+<span id="cb16-3"><a href="#cb16-3" aria-hidden="true" tabindex="-1"></a>full_dataset<span class="sc">$</span>y <span class="ot">&lt;-</span> coords[, <span class="dv">2</span>]</span>
+<span id="cb16-4"><a href="#cb16-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb16-5"><a href="#cb16-5" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> <span class="fu">arrange</span>(full_dataset, track_id, datetime)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+<section id="per-point-parameters" class="level3">
+<h3 class="anchored" data-anchor-id="per-point-parameters">Per-point parameters</h3>
+<p>All derivations are grouped by <code>track_id</code> so values do not leak across track boundaries.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb17"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb17-2"><a href="#cb17-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb17-3"><a href="#cb17-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">steplength =</span> <span class="fu">sqrt</span>((<span class="fu">lead</span>(x) <span class="sc">-</span> x)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (<span class="fu">lead</span>(y) <span class="sc">-</span> y)<span class="sc">^</span><span class="dv">2</span>),</span>
+<span id="cb17-4"><a href="#cb17-4" aria-hidden="true" tabindex="-1"></a>    <span class="at">timelag =</span> <span class="fu">as.numeric</span>(<span class="fu">difftime</span>(<span class="fu">lead</span>(datetime), datetime, <span class="at">units =</span> <span class="st">"secs"</span>)),</span>
+<span id="cb17-5"><a href="#cb17-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">speed =</span> steplength <span class="sc">/</span> timelag,</span>
+<span id="cb17-6"><a href="#cb17-6" aria-hidden="true" tabindex="-1"></a>    <span class="at">acceleration =</span> (<span class="fu">lead</span>(speed) <span class="sc">-</span> speed) <span class="sc">/</span> timelag,</span>
+<span id="cb17-7"><a href="#cb17-7" aria-hidden="true" tabindex="-1"></a>    <span class="co"># Turning angle: change of bearing wrapped to [-pi, pi], then absolute, in degrees</span></span>
+<span id="cb17-8"><a href="#cb17-8" aria-hidden="true" tabindex="-1"></a>    <span class="at">bearing =</span> <span class="fu">atan2</span>(<span class="fu">lead</span>(y) <span class="sc">-</span> y, <span class="fu">lead</span>(x) <span class="sc">-</span> x),</span>
+<span id="cb17-9"><a href="#cb17-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">turning_angle =</span> <span class="fu">abs</span>(((bearing <span class="sc">-</span> <span class="fu">lag</span>(bearing) <span class="sc">+</span> pi) <span class="sc">%%</span> (<span class="dv">2</span> <span class="sc">*</span> pi)) <span class="sc">-</span> pi) <span class="sc">*</span> <span class="dv">180</span> <span class="sc">/</span> pi,</span>
+<span id="cb17-10"><a href="#cb17-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> track_id</span>
+<span id="cb17-11"><a href="#cb17-11" aria-hidden="true" tabindex="-1"></a>  ) <span class="sc">|&gt;</span></span>
+<span id="cb17-12"><a href="#cb17-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="sc">-</span>bearing)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="multi-scale-features" class="level3">
+<h3 class="anchored" data-anchor-id="multi-scale-features">Multi-scale features</h3>
+<p>Sinuosity at three window sizes captures curvature from short wiggles to longer-range straightness. Rolling mean / sd of speed and acceleration capture the local <em>dynamics</em> (constant cruising vs.&nbsp;stop-and-go). The <code>stop_duration</code> feature counts how many of the surrounding 11 points are near-stationary (speed &lt; 0.5 m/s), capturing waiting behaviour typical for bus stops or traffic lights.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb18"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb18-2"><a href="#cb18-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb18-3"><a href="#cb18-3" aria-hidden="true" tabindex="-1"></a>    <span class="at">sinuosity_5 =</span> <span class="fu">rollsum</span>(steplength, <span class="dv">5</span>,  <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">align =</span> <span class="st">"left"</span>) <span class="sc">/</span></span>
+<span id="cb18-4"><a href="#cb18-4" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">sqrt</span>((<span class="fu">lead</span>(x, <span class="dv">5</span>)  <span class="sc">-</span> x)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (<span class="fu">lead</span>(y, <span class="dv">5</span>)  <span class="sc">-</span> y)<span class="sc">^</span><span class="dv">2</span>),</span>
+<span id="cb18-5"><a href="#cb18-5" aria-hidden="true" tabindex="-1"></a>    <span class="at">sinuosity_11 =</span> <span class="fu">rollsum</span>(steplength, <span class="dv">11</span>, <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">align =</span> <span class="st">"left"</span>) <span class="sc">/</span></span>
+<span id="cb18-6"><a href="#cb18-6" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">sqrt</span>((<span class="fu">lead</span>(x, <span class="dv">11</span>) <span class="sc">-</span> x)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (<span class="fu">lead</span>(y, <span class="dv">11</span>) <span class="sc">-</span> y)<span class="sc">^</span><span class="dv">2</span>),</span>
+<span id="cb18-7"><a href="#cb18-7" aria-hidden="true" tabindex="-1"></a>    <span class="at">sinuosity_21 =</span> <span class="fu">rollsum</span>(steplength, <span class="dv">21</span>, <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">align =</span> <span class="st">"left"</span>) <span class="sc">/</span></span>
+<span id="cb18-8"><a href="#cb18-8" aria-hidden="true" tabindex="-1"></a>                   <span class="fu">sqrt</span>((<span class="fu">lead</span>(x, <span class="dv">21</span>) <span class="sc">-</span> x)<span class="sc">^</span><span class="dv">2</span> <span class="sc">+</span> (<span class="fu">lead</span>(y, <span class="dv">21</span>) <span class="sc">-</span> y)<span class="sc">^</span><span class="dv">2</span>),</span>
+<span id="cb18-9"><a href="#cb18-9" aria-hidden="true" tabindex="-1"></a>    <span class="at">speed_mean_5 =</span> <span class="fu">rollmean</span>(speed, <span class="dv">5</span>, <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">align =</span> <span class="st">"center"</span>),</span>
+<span id="cb18-10"><a href="#cb18-10" aria-hidden="true" tabindex="-1"></a>    <span class="at">speed_sd_5 =</span> <span class="fu">rollapply</span>(speed, <span class="dv">5</span>, sd, <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">align =</span> <span class="st">"center"</span>),</span>
+<span id="cb18-11"><a href="#cb18-11" aria-hidden="true" tabindex="-1"></a>    <span class="at">accel_sd_5 =</span> <span class="fu">rollapply</span>(acceleration, <span class="dv">5</span>, sd, <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">align =</span> <span class="st">"center"</span>),</span>
+<span id="cb18-12"><a href="#cb18-12" aria-hidden="true" tabindex="-1"></a>    <span class="at">is_stop =</span> <span class="fu">as.numeric</span>(speed <span class="sc">&lt;</span> <span class="fl">0.5</span> <span class="sc">|</span> <span class="fu">is.na</span>(speed)),</span>
+<span id="cb18-13"><a href="#cb18-13" aria-hidden="true" tabindex="-1"></a>    <span class="at">stop_duration =</span> <span class="fu">rollsum</span>(is_stop, <span class="dv">11</span>, <span class="at">fill =</span> <span class="cn">NA</span>, <span class="at">align =</span> <span class="st">"center"</span>),</span>
+<span id="cb18-14"><a href="#cb18-14" aria-hidden="true" tabindex="-1"></a>    <span class="at">.by =</span> track_id</span>
+<span id="cb18-15"><a href="#cb18-15" aria-hidden="true" tabindex="-1"></a>  )</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="sanity-check" class="level3">
+<h3 class="anchored" data-anchor-id="sanity-check">Sanity check</h3>
+<p>A look at the first 15 points of an arbitrary <code>bike</code> track and a count of non-finite values per feature:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb19"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb19-1"><a href="#cb19-1" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb19-2"><a href="#cb19-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb19-3"><a href="#cb19-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(mode <span class="sc">==</span> <span class="st">"bike"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-4"><a href="#cb19-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice</span>(<span class="dv">1</span><span class="sc">:</span><span class="dv">15</span>) <span class="sc">|&gt;</span></span>
+<span id="cb19-5"><a href="#cb19-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(datetime, speed, acceleration, turning_angle, sinuosity_5, sinuosity_21) <span class="sc">|&gt;</span></span>
+<span id="cb19-6"><a href="#cb19-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>(<span class="at">digits =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<colgroup>
+<col style="width: 25%">
+<col style="width: 7%">
+<col style="width: 16%">
+<col style="width: 17%">
+<col style="width: 15%">
+<col style="width: 16%">
+</colgroup>
+<thead>
+<tr class="header">
+<th style="text-align: left;">datetime</th>
+<th style="text-align: right;">speed</th>
+<th style="text-align: right;">acceleration</th>
+<th style="text-align: right;">turning_angle</th>
+<th style="text-align: right;">sinuosity_5</th>
+<th style="text-align: right;">sinuosity_21</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">2011-09-23 18:02:49</td>
+<td style="text-align: right;">3.41</td>
+<td style="text-align: right;">2.37</td>
+<td style="text-align: right;">NA</td>
+<td style="text-align: right;">1.03</td>
+<td style="text-align: right;">2.68</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-09-23 18:02:50</td>
+<td style="text-align: right;">5.78</td>
+<td style="text-align: right;">16.07</td>
+<td style="text-align: right;">4.99</td>
+<td style="text-align: right;">1.03</td>
+<td style="text-align: right;">2.70</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-09-23 18:02:51</td>
+<td style="text-align: right;">21.85</td>
+<td style="text-align: right;">-18.63</td>
+<td style="text-align: right;">4.46</td>
+<td style="text-align: right;">1.05</td>
+<td style="text-align: right;">2.78</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-09-23 18:02:52</td>
+<td style="text-align: right;">3.23</td>
+<td style="text-align: right;">-1.53</td>
+<td style="text-align: right;">26.01</td>
+<td style="text-align: right;">1.26</td>
+<td style="text-align: right;">2.92</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-09-23 18:02:53</td>
+<td style="text-align: right;">1.69</td>
+<td style="text-align: right;">-0.58</td>
+<td style="text-align: right;">25.69</td>
+<td style="text-align: right;">1.69</td>
+<td style="text-align: right;">2.79</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-09-23 18:02:54</td>
+<td style="text-align: right;">1.12</td>
+<td style="text-align: right;">-0.38</td>
+<td style="text-align: right;">56.40</td>
+<td style="text-align: right;">1.45</td>
+<td style="text-align: right;">2.64</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-09-23 18:02:55</td>
+<td style="text-align: right;">0.74</td>
+<td style="text-align: right;">1.37</td>
+<td style="text-align: right;">68.12</td>
+<td style="text-align: right;">1.49</td>
+<td style="text-align: right;">2.59</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-09-23 18:02:56</td>
+<td style="text-align: right;">2.10</td>
+<td style="text-align: right;">12.10</td>
+<td style="text-align: right;">37.86</td>
+<td style="text-align: right;">1.43</td>
+<td style="text-align: right;">2.59</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-09-23 18:02:57</td>
+<td style="text-align: right;">14.20</td>
+<td style="text-align: right;">-4.83</td>
+<td style="text-align: right;">107.59</td>
+<td style="text-align: right;">1.35</td>
+<td style="text-align: right;">2.70</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-09-23 18:02:58</td>
+<td style="text-align: right;">9.37</td>
+<td style="text-align: right;">-1.04</td>
+<td style="text-align: right;">83.43</td>
+<td style="text-align: right;">1.78</td>
+<td style="text-align: right;">2.07</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-09-23 18:02:59</td>
+<td style="text-align: right;">8.34</td>
+<td style="text-align: right;">-5.12</td>
+<td style="text-align: right;">115.34</td>
+<td style="text-align: right;">1.07</td>
+<td style="text-align: right;">2.18</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-09-23 18:03:00</td>
+<td style="text-align: right;">3.22</td>
+<td style="text-align: right;">-2.98</td>
+<td style="text-align: right;">38.66</td>
+<td style="text-align: right;">1.44</td>
+<td style="text-align: right;">1.48</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-09-23 18:03:01</td>
+<td style="text-align: right;">0.23</td>
+<td style="text-align: right;">0.70</td>
+<td style="text-align: right;">79.17</td>
+<td style="text-align: right;">2.45</td>
+<td style="text-align: right;">1.32</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">2011-09-23 18:03:02</td>
+<td style="text-align: right;">0.93</td>
+<td style="text-align: right;">4.52</td>
+<td style="text-align: right;">0.00</td>
+<td style="text-align: right;">35.58</td>
+<td style="text-align: right;">1.30</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">2011-09-23 18:03:03</td>
+<td style="text-align: right;">5.46</td>
+<td style="text-align: right;">-4.34</td>
+<td style="text-align: right;">27.05</td>
+<td style="text-align: right;">3.06</td>
+<td style="text-align: right;">1.25</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb20"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" aria-hidden="true" tabindex="-1"></a>full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb20-2"><a href="#cb20-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb20-3"><a href="#cb20-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">summarise</span>(<span class="fu">across</span>(<span class="fu">c</span>(speed, acceleration, turning_angle,</span>
+<span id="cb20-4"><a href="#cb20-4" aria-hidden="true" tabindex="-1"></a>                     sinuosity_5, sinuosity_11, sinuosity_21,</span>
+<span id="cb20-5"><a href="#cb20-5" aria-hidden="true" tabindex="-1"></a>                     speed_mean_5, speed_sd_5, accel_sd_5, stop_duration),</span>
+<span id="cb20-6"><a href="#cb20-6" aria-hidden="true" tabindex="-1"></a>                   <span class="sc">~</span> <span class="fu">sum</span>(<span class="sc">!</span><span class="fu">is.finite</span>(.x)))) <span class="sc">|&gt;</span></span>
+<span id="cb20-7"><a href="#cb20-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="fu">everything</span>(), <span class="at">names_to =</span> <span class="st">"feature"</span>, <span class="at">values_to =</span> <span class="st">"n_non_finite"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb20-8"><a href="#cb20-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">arrange</span>(<span class="fu">desc</span>(n_non_finite)) <span class="sc">|&gt;</span></span>
+<span id="cb20-9"><a href="#cb20-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">kable</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<thead>
+<tr class="header">
+<th style="text-align: left;">feature</th>
+<th style="text-align: right;">n_non_finite</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">accel_sd_5</td>
+<td style="text-align: right;">209632</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">speed_mean_5</td>
+<td style="text-align: right;">207627</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">speed_sd_5</td>
+<td style="text-align: right;">207627</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">acceleration</td>
+<td style="text-align: right;">200608</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">speed</td>
+<td style="text-align: right;">152651</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">sinuosity_21</td>
+<td style="text-align: right;">47965</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">sinuosity_11</td>
+<td style="text-align: right;">29298</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">sinuosity_5</td>
+<td style="text-align: right;">22067</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">stop_duration</td>
+<td style="text-align: right;">21270</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">turning_angle</td>
+<td style="text-align: right;">4254</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+<p>There are many Non-finite values. They most likely come from track edges (lead/lag), duplicate timestamps (timelag = 0 causing division by zero), and zero-length straight distances over a window. Speed alone has ~15% non-finite values, and rolling-window features amplify this further because each Inf propagates to neighbouring points. All affected rows are dropped before training. After filtering, the training set still contains enough complete points per class for a robust model.</p>
+</section>
+<section id="distributions-per-mode" class="level3">
+<h3 class="anchored" data-anchor-id="distributions-per-mode">Distributions per mode</h3>
+<p>To check that the features actually separate the modes, I sample 100k labelled points and plot the three most important features per mode:</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb21"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" aria-hidden="true" tabindex="-1"></a>feature_sample <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb21-2"><a href="#cb21-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb21-3"><a href="#cb21-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">is.na</span>(mode)) <span class="sc">|&gt;</span></span>
+<span id="cb21-4"><a href="#cb21-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_sample</span>(<span class="at">n =</span> <span class="dv">100000</span>) <span class="sc">|&gt;</span></span>
+<span id="cb21-5"><a href="#cb21-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mode =</span> <span class="fu">fct_reorder</span>(mode, speed, median, <span class="at">na.rm =</span> <span class="cn">TRUE</span>))</span>
+<span id="cb21-6"><a href="#cb21-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb21-7"><a href="#cb21-7" aria-hidden="true" tabindex="-1"></a>feature_sample <span class="sc">|&gt;</span></span>
+<span id="cb21-8"><a href="#cb21-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(mode, speed, turning_angle, sinuosity_21) <span class="sc">|&gt;</span></span>
+<span id="cb21-9"><a href="#cb21-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="sc">-</span>mode, <span class="at">names_to =</span> <span class="st">"feature"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb21-10"><a href="#cb21-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">is.finite</span>(value)) <span class="sc">|&gt;</span></span>
+<span id="cb21-11"><a href="#cb21-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(value, mode, <span class="at">fill =</span> mode)) <span class="sc">+</span></span>
+<span id="cb21-12"><a href="#cb21-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_boxplot</span>(<span class="at">outlier.size =</span> <span class="fl">0.2</span>) <span class="sc">+</span></span>
+<span id="cb21-13"><a href="#cb21-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span> feature, <span class="at">scales =</span> <span class="st">"free_x"</span>) <span class="sc">+</span></span>
+<span id="cb21-14"><a href="#cb21-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb21-15"><a href="#cb21-15" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">"none"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-13-1.png" class="img-fluid figure-img" width="960"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="step-3-model-training" class="level2">
+<h2 class="anchored" data-anchor-id="step-3-model-training">Step 3: Model Training</h2>
+<p>I follow the same approach as the minimal example (CART via <code>rpart</code>) but apply it to per-point features instead of per-segment aggregates. Additionally i train a simple Random Forest model. With this approach I can easily and fairly compare the results of the baseline per-segment approach with the same model but on a per-point base and a slightly more complex Random-Forest model. To keep training fast and address class imbalance, I sample 10’000 points per class from the training set.</p>
+<section id="prepare-training-data" class="level3">
+<h3 class="anchored" data-anchor-id="prepare-training-data">Prepare training data</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb22"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" aria-hidden="true" tabindex="-1"></a><span class="co"># All features</span></span>
+<span id="cb22-2"><a href="#cb22-2" aria-hidden="true" tabindex="-1"></a>feature_cols <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">"steplength"</span>, <span class="st">"timelag"</span>, <span class="st">"speed"</span>, <span class="st">"acceleration"</span>, <span class="st">"turning_angle"</span>,</span>
+<span id="cb22-3"><a href="#cb22-3" aria-hidden="true" tabindex="-1"></a>                  <span class="st">"sinuosity_5"</span>, <span class="st">"sinuosity_11"</span>, <span class="st">"sinuosity_21"</span>,</span>
+<span id="cb22-4"><a href="#cb22-4" aria-hidden="true" tabindex="-1"></a>                  <span class="st">"speed_mean_5"</span>, <span class="st">"speed_sd_5"</span>, <span class="st">"accel_sd_5"</span>, <span class="st">"stop_duration"</span>)</span>
+<span id="cb22-5"><a href="#cb22-5" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-6"><a href="#cb22-6" aria-hidden="true" tabindex="-1"></a>train_all <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb22-7"><a href="#cb22-7" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb22-8"><a href="#cb22-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(data <span class="sc">==</span> <span class="st">"training"</span>, <span class="sc">!</span><span class="fu">is.na</span>(mode)) <span class="sc">|&gt;</span></span>
+<span id="cb22-9"><a href="#cb22-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"mode"</span>, feature_cols))) <span class="sc">|&gt;</span></span>
+<span id="cb22-10"><a href="#cb22-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">if_all</span>(<span class="fu">where</span>(is.numeric), is.finite)) <span class="sc">|&gt;</span></span>
+<span id="cb22-11"><a href="#cb22-11" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mode =</span> <span class="fu">factor</span>(mode))</span>
+<span id="cb22-12"><a href="#cb22-12" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb22-13"><a href="#cb22-13" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Complete training points:"</span>, <span class="fu">nrow</span>(train_all), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Complete training points: 378283 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb24"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(train_all<span class="sc">$</span>mode)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+  bike    bus    car subway  train   walk 
+ 71930 119207  47672  16134   2810 120530 </code></pre>
+</div>
+</div>
+</section>
+<section id="balanced-sampling" class="level3">
+<h3 class="anchored" data-anchor-id="balanced-sampling">Balanced sampling</h3>
+<p>The <code>train</code> class contains only 2’810 complete points and is upsampled to 10’000 via sampling with replacement. This is a standard oversampling approach to address class imbalance, though it means the model sees duplicated points for rare classes, which increases the risk of overfitting. A more sophisticated alternative would be SMOTE, which generates new synthetic points instead of duplicating existing ones. But for this exercise I chose to keep it simple.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb26"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb26-1"><a href="#cb26-1" aria-hidden="true" tabindex="-1"></a>n_per_class <span class="ot">&lt;-</span> <span class="dv">10000</span></span>
+<span id="cb26-2"><a href="#cb26-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-3"><a href="#cb26-3" aria-hidden="true" tabindex="-1"></a>idx <span class="ot">&lt;-</span> <span class="fu">unlist</span>(<span class="fu">lapply</span>(<span class="fu">levels</span>(train_all<span class="sc">$</span>mode), <span class="cf">function</span>(m) {</span>
+<span id="cb26-4"><a href="#cb26-4" aria-hidden="true" tabindex="-1"></a>  rows <span class="ot">&lt;-</span> <span class="fu">which</span>(train_all<span class="sc">$</span>mode <span class="sc">==</span> m)</span>
+<span id="cb26-5"><a href="#cb26-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">sample</span>(rows, n_per_class, <span class="at">replace =</span> <span class="cn">TRUE</span>)</span>
+<span id="cb26-6"><a href="#cb26-6" aria-hidden="true" tabindex="-1"></a>}))</span>
+<span id="cb26-7"><a href="#cb26-7" aria-hidden="true" tabindex="-1"></a>train_sample <span class="ot">&lt;-</span> <span class="fu">as.data.frame</span>(train_all[idx, ])</span>
+<span id="cb26-8"><a href="#cb26-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb26-9"><a href="#cb26-9" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Balanced training set:</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Balanced training set:</code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb28"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb28-1"><a href="#cb28-1" aria-hidden="true" tabindex="-1"></a><span class="fu">table</span>(train_sample<span class="sc">$</span>mode)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>
+  bike    bus    car subway  train   walk 
+ 10000  10000  10000  10000  10000  10000 </code></pre>
+</div>
+</div>
+</section>
+<section id="cart-model" class="level3">
+<h3 class="anchored" data-anchor-id="cart-model">CART model</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb30"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb30-1"><a href="#cb30-1" aria-hidden="true" tabindex="-1"></a>cart_model <span class="ot">&lt;-</span> <span class="fu">rpart</span>(mode <span class="sc">~</span> ., <span class="at">data =</span> train_sample, <span class="at">method =</span> <span class="st">"class"</span>)</span>
+<span id="cb30-2"><a href="#cb30-2" aria-hidden="true" tabindex="-1"></a><span class="fu">rpart.plot</span>(cart_model, <span class="at">type =</span> <span class="dv">2</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-16-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="random-forest-model" class="level3">
+<h3 class="anchored" data-anchor-id="random-forest-model">Random Forest model</h3>
+<p>As an extension, I train a simple Random Forest on the same balanced sample and compare it to the <code>rpart</code> approach. A forest of 300 trees should capture non-linear interactions that a single CART tree misses.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb31"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb31-1"><a href="#cb31-1" aria-hidden="true" tabindex="-1"></a>rf_model <span class="ot">&lt;-</span> <span class="fu">ranger</span>(mode <span class="sc">~</span> ., <span class="at">data =</span> train_sample, <span class="at">num.trees =</span> <span class="dv">300</span>, <span class="at">importance =</span> <span class="st">"impurity"</span>)</span>
+<span id="cb31-2"><a href="#cb31-2" aria-hidden="true" tabindex="-1"></a>rf_model</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Ranger result
+
+Call:
+ ranger(mode ~ ., data = train_sample, num.trees = 300, importance = "impurity") 
+
+Type:                             Classification 
+Number of trees:                  300 
+Sample size:                      60000 
+Number of independent variables:  12 
+Mtry:                             3 
+Target node size:                 1 
+Variable importance mode:         impurity 
+Splitrule:                        gini 
+OOB prediction error:             23.57 % </code></pre>
+</div>
+</div>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb33"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb33-1"><a href="#cb33-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Feature Importance</span></span>
+<span id="cb33-2"><a href="#cb33-2" aria-hidden="true" tabindex="-1"></a>importance_df <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(</span>
+<span id="cb33-3"><a href="#cb33-3" aria-hidden="true" tabindex="-1"></a>  <span class="at">feature =</span> <span class="fu">names</span>(rf_model<span class="sc">$</span>variable.importance),</span>
+<span id="cb33-4"><a href="#cb33-4" aria-hidden="true" tabindex="-1"></a>  <span class="at">importance =</span> rf_model<span class="sc">$</span>variable.importance</span>
+<span id="cb33-5"><a href="#cb33-5" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb33-6"><a href="#cb33-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb33-7"><a href="#cb33-7" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(importance_df, <span class="fu">aes</span>(<span class="at">x =</span> importance, <span class="at">y =</span> <span class="fu">reorder</span>(feature, importance))) <span class="sc">+</span></span>
+<span id="cb33-8"><a href="#cb33-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>() <span class="sc">+</span></span>
+<span id="cb33-9"><a href="#cb33-9" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Random Forest: variable importance"</span>, <span class="at">x =</span> <span class="st">"Importance"</span>, <span class="at">y =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb33-10"><a href="#cb33-10" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-18-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="step-4-evaluation" class="level2">
+<h2 class="anchored" data-anchor-id="step-4-evaluation">Step 4: Evaluation</h2>
+<section id="prepare-test-data" class="level3">
+<h3 class="anchored" data-anchor-id="prepare-test-data">Prepare test data</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb34"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb34-1"><a href="#cb34-1" aria-hidden="true" tabindex="-1"></a>test_df <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb34-2"><a href="#cb34-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb34-3"><a href="#cb34-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(data <span class="sc">==</span> <span class="st">"testing"</span>, <span class="sc">!</span><span class="fu">is.na</span>(mode)) <span class="sc">|&gt;</span></span>
+<span id="cb34-4"><a href="#cb34-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"mode"</span>, feature_cols))) <span class="sc">|&gt;</span></span>
+<span id="cb34-5"><a href="#cb34-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(<span class="fu">if_all</span>(<span class="fu">where</span>(is.numeric), is.finite)) <span class="sc">|&gt;</span></span>
+<span id="cb34-6"><a href="#cb34-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">mode =</span> <span class="fu">factor</span>(mode, <span class="at">levels =</span> <span class="fu">levels</span>(train_sample<span class="sc">$</span>mode)))</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+</div>
+</section>
+<section id="cart-evaluation" class="level3">
+<h3 class="anchored" data-anchor-id="cart-evaluation">CART evaluation</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb35"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb35-1"><a href="#cb35-1" aria-hidden="true" tabindex="-1"></a>cart_preds <span class="ot">&lt;-</span> <span class="fu">predict</span>(cart_model, test_df)</span>
+<span id="cb35-2"><a href="#cb35-2" aria-hidden="true" tabindex="-1"></a>test_df<span class="sc">$</span>pred_cart <span class="ot">&lt;-</span> <span class="fu">colnames</span>(cart_preds)[<span class="fu">apply</span>(cart_preds, <span class="dv">1</span>, which.max)]</span>
+<span id="cb35-3"><a href="#cb35-3" aria-hidden="true" tabindex="-1"></a>test_df<span class="sc">$</span>pred_cart <span class="ot">&lt;-</span> <span class="fu">factor</span>(test_df<span class="sc">$</span>pred_cart, <span class="at">levels =</span> <span class="fu">levels</span>(test_df<span class="sc">$</span>mode))</span>
+<span id="cb35-4"><a href="#cb35-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb35-5"><a href="#cb35-5" aria-hidden="true" tabindex="-1"></a><span class="fu">confusionMatrix</span>(test_df<span class="sc">$</span>pred_cart, <span class="at">reference =</span> test_df<span class="sc">$</span>mode)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Confusion Matrix and Statistics
+
+          Reference
+Prediction  bike   bus   car subway train  walk
+    bike   28152  7017  3079    307    85  4829
+    bus     4120 25805  6765    989   583  2734
+    car      261  7818  8990   1023   128    50
+    subway     5   122  1058   4928   312    93
+    train     86  1289  2990   2118  1756   190
+    walk    8817 24471  5512   3043    72 44446
+
+Overall Statistics
+                                          
+               Accuracy : 0.5591          
+                 95% CI : (0.5569, 0.5612)
+    No Information Rate : 0.326           
+    P-Value [Acc &gt; NIR] : &lt; 2.2e-16       
+                                          
+                  Kappa : 0.4256          
+                                          
+ Mcnemar's Test P-Value : &lt; 2.2e-16       
+
+Statistics by Class:
+
+                     Class: bike Class: bus Class: car Class: subway
+Sensitivity               0.6793     0.3879    0.31662       0.39716
+Specificity               0.9058     0.8895    0.94717       0.99170
+Pos Pred Value            0.6476     0.6295    0.49206       0.75606
+Neg Pred Value            0.9172     0.7503    0.89555       0.96213
+Prevalence                0.2031     0.3260    0.13916       0.06081
+Detection Rate            0.1380     0.1265    0.04406       0.02415
+Detection Prevalence      0.2130     0.2009    0.08954       0.03194
+Balanced Accuracy         0.7926     0.6387    0.63189       0.69443
+                     Class: train Class: walk
+Sensitivity              0.598093      0.8491
+Specificity              0.966819      0.7237
+Pos Pred Value           0.208328      0.5147
+Neg Pred Value           0.993968      0.9329
+Prevalence               0.014389      0.2565
+Detection Rate           0.008606      0.2178
+Detection Prevalence     0.041310      0.4232
+Balanced Accuracy        0.782456      0.7864</code></pre>
+</div>
+</div>
+</section>
+<section id="random-forest-evaluation" class="level3">
+<h3 class="anchored" data-anchor-id="random-forest-evaluation">Random Forest evaluation</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb37"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb37-1"><a href="#cb37-1" aria-hidden="true" tabindex="-1"></a>test_df<span class="sc">$</span>pred_rf <span class="ot">&lt;-</span> <span class="fu">predict</span>(rf_model, <span class="at">data =</span> <span class="fu">as.data.frame</span>(test_df[, feature_cols]))<span class="sc">$</span>predictions</span>
+<span id="cb37-2"><a href="#cb37-2" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb37-3"><a href="#cb37-3" aria-hidden="true" tabindex="-1"></a><span class="fu">confusionMatrix</span>(test_df<span class="sc">$</span>pred_rf, <span class="at">reference =</span> test_df<span class="sc">$</span>mode)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Confusion Matrix and Statistics
+
+          Reference
+Prediction  bike   bus   car subway train  walk
+    bike   29765  6196  2008    236   174  4996
+    bus     4000 37892  7122   1186   454  3098
+    car      479  7526 12001    661   108   565
+    subway   277  1687  3377   7371   694  1041
+    train     28   377  1078    791  1438   106
+    walk    6892 12844  2808   2163    68 42536
+
+Overall Statistics
+                                        
+               Accuracy : 0.642         
+                 95% CI : (0.64, 0.6441)
+    No Information Rate : 0.326         
+    P-Value [Acc &gt; NIR] : &lt; 2.2e-16     
+                                        
+                  Kappa : 0.5334        
+                                        
+ Mcnemar's Test P-Value : &lt; 2.2e-16     
+
+Statistics by Class:
+
+                     Class: bike Class: bus Class: car Class: subway
+Sensitivity               0.7183     0.5696    0.42266       0.59405
+Specificity               0.9163     0.8847    0.94683       0.96308
+Pos Pred Value            0.6862     0.7049    0.56237       0.51021
+Neg Pred Value            0.9273     0.8095    0.91028       0.97343
+Prevalence                0.2031     0.3260    0.13916       0.06081
+Detection Rate            0.1459     0.1857    0.05882       0.03612
+Detection Prevalence      0.2126     0.2634    0.10459       0.07080
+Balanced Accuracy         0.8173     0.7271    0.68475       0.77856
+                     Class: train Class: walk
+Sensitivity              0.489782      0.8127
+Specificity              0.988166      0.8367
+Pos Pred Value           0.376637      0.6319
+Neg Pred Value           0.992518      0.9283
+Prevalence               0.014389      0.2565
+Detection Rate           0.007048      0.2085
+Detection Prevalence     0.018712      0.3299
+Balanced Accuracy        0.738974      0.8247</code></pre>
+</div>
+</div>
+</section>
+<section id="model-comparison" class="level3">
+<h3 class="anchored" data-anchor-id="model-comparison">Model comparison</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb39"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb39-1"><a href="#cb39-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Extract per-class F1 from both models</span></span>
+<span id="cb39-2"><a href="#cb39-2" aria-hidden="true" tabindex="-1"></a>get_f1 <span class="ot">&lt;-</span> <span class="cf">function</span>(cm) {</span>
+<span id="cb39-3"><a href="#cb39-3" aria-hidden="true" tabindex="-1"></a>  p <span class="ot">&lt;-</span> cm<span class="sc">$</span>byClass[, <span class="st">"Precision"</span>]</span>
+<span id="cb39-4"><a href="#cb39-4" aria-hidden="true" tabindex="-1"></a>  r <span class="ot">&lt;-</span> cm<span class="sc">$</span>byClass[, <span class="st">"Recall"</span>]</span>
+<span id="cb39-5"><a href="#cb39-5" aria-hidden="true" tabindex="-1"></a>  f1 <span class="ot">&lt;-</span> <span class="dv">2</span> <span class="sc">*</span> p <span class="sc">*</span> r <span class="sc">/</span> (p <span class="sc">+</span> r)</span>
+<span id="cb39-6"><a href="#cb39-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">data.frame</span>(<span class="at">mode =</span> <span class="fu">gsub</span>(<span class="st">"Class: "</span>, <span class="st">""</span>, <span class="fu">names</span>(f1)), <span class="at">f1 =</span> f1, <span class="at">row.names =</span> <span class="cn">NULL</span>)</span>
+<span id="cb39-7"><a href="#cb39-7" aria-hidden="true" tabindex="-1"></a>}</span>
+<span id="cb39-8"><a href="#cb39-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-9"><a href="#cb39-9" aria-hidden="true" tabindex="-1"></a>cm_cart <span class="ot">&lt;-</span> <span class="fu">confusionMatrix</span>(test_df<span class="sc">$</span>pred_cart, test_df<span class="sc">$</span>mode)</span>
+<span id="cb39-10"><a href="#cb39-10" aria-hidden="true" tabindex="-1"></a>cm_rf   <span class="ot">&lt;-</span> <span class="fu">confusionMatrix</span>(test_df<span class="sc">$</span>pred_rf, test_df<span class="sc">$</span>mode)</span>
+<span id="cb39-11"><a href="#cb39-11" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-12"><a href="#cb39-12" aria-hidden="true" tabindex="-1"></a>f1_comparison <span class="ot">&lt;-</span> <span class="fu">merge</span>(</span>
+<span id="cb39-13"><a href="#cb39-13" aria-hidden="true" tabindex="-1"></a>  <span class="fu">get_f1</span>(cm_cart) <span class="sc">|&gt;</span> <span class="fu">rename</span>(<span class="at">f1_cart =</span> f1),</span>
+<span id="cb39-14"><a href="#cb39-14" aria-hidden="true" tabindex="-1"></a>  <span class="fu">get_f1</span>(cm_rf)   <span class="sc">|&gt;</span> <span class="fu">rename</span>(<span class="at">f1_rf =</span> f1),</span>
+<span id="cb39-15"><a href="#cb39-15" aria-hidden="true" tabindex="-1"></a>  <span class="at">by =</span> <span class="st">"mode"</span></span>
+<span id="cb39-16"><a href="#cb39-16" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb39-17"><a href="#cb39-17" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb39-18"><a href="#cb39-18" aria-hidden="true" tabindex="-1"></a><span class="fu">kable</span>(f1_comparison, <span class="at">digits =</span> <span class="dv">3</span>, <span class="at">caption =</span> <span class="st">"Per-class F1 scores: CART vs Random Forest"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<table class="caption-top table table-sm table-striped small">
+<caption>Per-class F1 scores: CART vs Random Forest</caption>
+<thead>
+<tr class="header">
+<th style="text-align: left;">mode</th>
+<th style="text-align: right;">f1_cart</th>
+<th style="text-align: right;">f1_rf</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td style="text-align: left;">bike</td>
+<td style="text-align: right;">0.663</td>
+<td style="text-align: right;">0.702</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">bus</td>
+<td style="text-align: right;">0.480</td>
+<td style="text-align: right;">0.630</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">car</td>
+<td style="text-align: right;">0.385</td>
+<td style="text-align: right;">0.483</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">subway</td>
+<td style="text-align: right;">0.521</td>
+<td style="text-align: right;">0.549</td>
+</tr>
+<tr class="odd">
+<td style="text-align: left;">train</td>
+<td style="text-align: right;">0.309</td>
+<td style="text-align: right;">0.426</td>
+</tr>
+<tr class="even">
+<td style="text-align: left;">walk</td>
+<td style="text-align: right;">0.641</td>
+<td style="text-align: right;">0.711</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb40"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb40-1"><a href="#cb40-1" aria-hidden="true" tabindex="-1"></a>f1_comparison <span class="sc">|&gt;</span></span>
+<span id="cb40-2"><a href="#cb40-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">pivot_longer</span>(<span class="at">cols =</span> <span class="fu">c</span>(f1_cart, f1_rf), <span class="at">names_to =</span> <span class="st">"model"</span>, <span class="at">values_to =</span> <span class="st">"f1"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb40-3"><a href="#cb40-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">model =</span> <span class="fu">if_else</span>(model <span class="sc">==</span> <span class="st">"f1_cart"</span>, <span class="st">"CART"</span>, <span class="st">"Random Forest"</span>)) <span class="sc">|&gt;</span></span>
+<span id="cb40-4"><a href="#cb40-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">ggplot</span>(<span class="fu">aes</span>(<span class="at">x =</span> f1, <span class="at">y =</span> <span class="fu">reorder</span>(mode, f1), <span class="at">fill =</span> model)) <span class="sc">+</span></span>
+<span id="cb40-5"><a href="#cb40-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">position =</span> <span class="st">"dodge"</span>) <span class="sc">+</span></span>
+<span id="cb40-6"><a href="#cb40-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"F1-score per mode: CART vs Random Forest"</span>,</span>
+<span id="cb40-7"><a href="#cb40-7" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"F1"</span>, <span class="at">y =</span> <span class="cn">NULL</span>, <span class="at">fill =</span> <span class="st">"Model"</span>) <span class="sc">+</span></span>
+<span id="cb40-8"><a href="#cb40-8" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-22-1.png" class="img-fluid figure-img" width="768"></p>
+</figure>
+</div>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb41"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb41-1"><a href="#cb41-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Accuracy CART:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(test_df<span class="sc">$</span>pred_cart <span class="sc">==</span> test_df<span class="sc">$</span>mode), <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Accuracy CART: 0.5591 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb43"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb43-1"><a href="#cb43-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Accuracy Random Forest:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(test_df<span class="sc">$</span>pred_rf <span class="sc">==</span> test_df<span class="sc">$</span>mode), <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Accuracy Random Forest: 0.642 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb45"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb45-1"><a href="#cb45-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Macro F1 CART:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(f1_comparison<span class="sc">$</span>f1_cart, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Macro F1 CART: 0.4998 </code></pre>
+</div>
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb47"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb47-1"><a href="#cb47-1" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Macro F1 Random Forest:"</span>, <span class="fu">round</span>(<span class="fu">mean</span>(f1_comparison<span class="sc">$</span>f1_rf, <span class="at">na.rm =</span> <span class="cn">TRUE</span>), <span class="dv">4</span>), <span class="st">"</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Macro F1 Random Forest: 0.5834 </code></pre>
+</div>
+</div>
+</section>
+<section id="discussion" class="level3">
+<h3 class="anchored" data-anchor-id="discussion">Discussion</h3>
+<p>The CART model reaches 55.9% accuracy (Macro F1: 0.5), while the Random Forest does noticeably better at 64.2% (Macro F1: 0.58). That’s a jump of almost 10 percentage points just from using 300 trees instead of one. I report Macro F1 alongside accuracy because it treats all classes equally. With accuracy alone, the large classes (walk, bus) dominate the picture. For comparison, the per-segment baseline from the minimal example gets 69.3% accuracy, but that’s a much easier problem: classifying pre-aggregated segments with smoothed averages vs.&nbsp;thousands of raw, noisy GPS points. Being only 5 points below that baseline feels like a reasonable result given the difficulty. Looking at the per-class F1 scores, the Random Forest beats the CART on every single mode. Walk (~0.71) and bike (~0.70) work best, they simply have very different speed and curvature profiles. Bus sees the biggest improvement (from ~0.48 to ~0.63), probably because the RF picks up on feature combinations that a single tree can’t capture. Car (~0.48) and train (~0.43) remain the weakest classes. Car because it overlaps so heavily with bus in speed and acceleration, and train because there are only ~2’800 unique training points that get upsampled to 10’000. The variable importance plot makes sense in this context: speed_mean_5 and speed dominate, followed by sinuosity_21 and steplength. Speed does the heavy lifting for the coarse separation between modes, while sinuosity adds the geometric dimension, distinguishing e.g.&nbsp;straight train tracks from winding bike paths.</p>
+</section>
+</section>
+<section id="step-5-prediction-on-the-validation-set" class="level2">
+<h2 class="anchored" data-anchor-id="step-5-prediction-on-the-validation-set">Step 5: Prediction on the Validation Set</h2>
+<p>I apply the Random Forest to the unlabelled validation set. Points where features couldn’t be computed (track boundaries with NAs) get the majority-vote label of their track as a fallback.</p>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb49"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb49-1"><a href="#cb49-1" aria-hidden="true" tabindex="-1"></a><span class="co"># Prepare validation features</span></span>
+<span id="cb49-2"><a href="#cb49-2" aria-hidden="true" tabindex="-1"></a>val_all <span class="ot">&lt;-</span> full_dataset <span class="sc">|&gt;</span></span>
+<span id="cb49-3"><a href="#cb49-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">st_drop_geometry</span>() <span class="sc">|&gt;</span></span>
+<span id="cb49-4"><a href="#cb49-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">filter</span>(data <span class="sc">==</span> <span class="st">"validation"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb49-5"><a href="#cb49-5" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(<span class="fu">all_of</span>(<span class="fu">c</span>(<span class="st">"user_id"</span>, <span class="st">"track_id"</span>, <span class="st">"datetime"</span>, feature_cols)))</span>
+<span id="cb49-6"><a href="#cb49-6" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-7"><a href="#cb49-7" aria-hidden="true" tabindex="-1"></a>val_complete <span class="ot">&lt;-</span> val_all <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="fu">if_all</span>(<span class="fu">all_of</span>(feature_cols), is.finite))</span>
+<span id="cb49-8"><a href="#cb49-8" aria-hidden="true" tabindex="-1"></a>val_incomplete <span class="ot">&lt;-</span> val_all <span class="sc">|&gt;</span> <span class="fu">filter</span>(<span class="sc">!</span><span class="fu">if_all</span>(<span class="fu">all_of</span>(feature_cols), is.finite))</span>
+<span id="cb49-9"><a href="#cb49-9" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-10"><a href="#cb49-10" aria-hidden="true" tabindex="-1"></a><span class="co"># Predict complete cases</span></span>
+<span id="cb49-11"><a href="#cb49-11" aria-hidden="true" tabindex="-1"></a>val_complete<span class="sc">$</span>pred_mode <span class="ot">&lt;-</span> <span class="fu">as.character</span>(</span>
+<span id="cb49-12"><a href="#cb49-12" aria-hidden="true" tabindex="-1"></a>  <span class="fu">predict</span>(rf_model, <span class="at">data =</span> <span class="fu">as.data.frame</span>(val_complete[, feature_cols]))<span class="sc">$</span>predictions</span>
+<span id="cb49-13"><a href="#cb49-13" aria-hidden="true" tabindex="-1"></a>)</span>
+<span id="cb49-14"><a href="#cb49-14" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-15"><a href="#cb49-15" aria-hidden="true" tabindex="-1"></a><span class="co"># For incomplete rows (track boundaries): use majority vote of same track</span></span>
+<span id="cb49-16"><a href="#cb49-16" aria-hidden="true" tabindex="-1"></a>track_majority <span class="ot">&lt;-</span> val_complete <span class="sc">|&gt;</span></span>
+<span id="cb49-17"><a href="#cb49-17" aria-hidden="true" tabindex="-1"></a>  <span class="fu">count</span>(track_id, pred_mode) <span class="sc">|&gt;</span></span>
+<span id="cb49-18"><a href="#cb49-18" aria-hidden="true" tabindex="-1"></a>  <span class="fu">slice_max</span>(n, <span class="at">n =</span> <span class="dv">1</span>, <span class="at">by =</span> track_id, <span class="at">with_ties =</span> <span class="cn">FALSE</span>) <span class="sc">|&gt;</span></span>
+<span id="cb49-19"><a href="#cb49-19" aria-hidden="true" tabindex="-1"></a>  <span class="fu">select</span>(track_id, pred_mode)</span>
+<span id="cb49-20"><a href="#cb49-20" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-21"><a href="#cb49-21" aria-hidden="true" tabindex="-1"></a>overall_majority <span class="ot">&lt;-</span> <span class="fu">names</span>(<span class="fu">which.max</span>(<span class="fu">table</span>(val_complete<span class="sc">$</span>pred_mode)))</span>
+<span id="cb49-22"><a href="#cb49-22" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-23"><a href="#cb49-23" aria-hidden="true" tabindex="-1"></a>val_incomplete <span class="ot">&lt;-</span> val_incomplete <span class="sc">|&gt;</span></span>
+<span id="cb49-24"><a href="#cb49-24" aria-hidden="true" tabindex="-1"></a>  <span class="fu">left_join</span>(track_majority, <span class="at">by =</span> <span class="st">"track_id"</span>) <span class="sc">|&gt;</span></span>
+<span id="cb49-25"><a href="#cb49-25" aria-hidden="true" tabindex="-1"></a>  <span class="fu">mutate</span>(<span class="at">pred_mode =</span> <span class="fu">if_else</span>(<span class="fu">is.na</span>(pred_mode), overall_majority, pred_mode))</span>
+<span id="cb49-26"><a href="#cb49-26" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-27"><a href="#cb49-27" aria-hidden="true" tabindex="-1"></a><span class="co"># Combine and export</span></span>
+<span id="cb49-28"><a href="#cb49-28" aria-hidden="true" tabindex="-1"></a>val_output <span class="ot">&lt;-</span> <span class="fu">bind_rows</span>(</span>
+<span id="cb49-29"><a href="#cb49-29" aria-hidden="true" tabindex="-1"></a>  val_complete <span class="sc">|&gt;</span> <span class="fu">select</span>(user_id, track_id, datetime, pred_mode),</span>
+<span id="cb49-30"><a href="#cb49-30" aria-hidden="true" tabindex="-1"></a>  val_incomplete <span class="sc">|&gt;</span> <span class="fu">select</span>(user_id, track_id, datetime, pred_mode)</span>
+<span id="cb49-31"><a href="#cb49-31" aria-hidden="true" tabindex="-1"></a>) <span class="sc">|&gt;</span> <span class="fu">arrange</span>(track_id, datetime)</span>
+<span id="cb49-32"><a href="#cb49-32" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb49-33"><a href="#cb49-33" aria-hidden="true" tabindex="-1"></a><span class="fu">write.csv</span>(val_output, <span class="st">"data/validation_predictions.csv"</span>, <span class="at">row.names =</span> <span class="cn">FALSE</span>)</span>
+<span id="cb49-34"><a href="#cb49-34" aria-hidden="true" tabindex="-1"></a><span class="fu">cat</span>(<span class="st">"Saved"</span>, <span class="fu">nrow</span>(val_output), <span class="st">"predictions to data/validation_predictions.csv</span><span class="sc">\n</span><span class="st">"</span>)</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output cell-output-stdout">
+<pre><code>Saved 240449 predictions to data/validation_predictions.csv</code></pre>
+</div>
+</div>
+<section id="prediction-distribution" class="level3">
+<h3 class="anchored" data-anchor-id="prediction-distribution">Prediction distribution</h3>
+<div class="cell">
+<div class="code-copy-outer-scaffold"><div class="sourceCode cell-code" id="cb51"><pre class="sourceCode r code-with-copy"><code class="sourceCode r"><span id="cb51-1"><a href="#cb51-1" aria-hidden="true" tabindex="-1"></a><span class="fu">ggplot</span>(val_output, <span class="fu">aes</span>(<span class="at">y =</span> <span class="fu">fct_infreq</span>(pred_mode))) <span class="sc">+</span></span>
+<span id="cb51-2"><a href="#cb51-2" aria-hidden="true" tabindex="-1"></a>  <span class="fu">geom_bar</span>() <span class="sc">+</span></span>
+<span id="cb51-3"><a href="#cb51-3" aria-hidden="true" tabindex="-1"></a>  <span class="fu">scale_x_continuous</span>(<span class="at">labels =</span> scales<span class="sc">::</span>comma) <span class="sc">+</span></span>
+<span id="cb51-4"><a href="#cb51-4" aria-hidden="true" tabindex="-1"></a>  <span class="fu">labs</span>(<span class="at">title =</span> <span class="st">"Predicted mode distribution (validation set)"</span>,</span>
+<span id="cb51-5"><a href="#cb51-5" aria-hidden="true" tabindex="-1"></a>       <span class="at">x =</span> <span class="st">"Count"</span>, <span class="at">y =</span> <span class="cn">NULL</span>) <span class="sc">+</span></span>
+<span id="cb51-6"><a href="#cb51-6" aria-hidden="true" tabindex="-1"></a>  <span class="fu">theme_minimal</span>()</span></code></pre></div><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></div>
+<div class="cell-output-display">
+<div>
+<figure class="figure">
+<p><img src="index_files/figure-html/unnamed-chunk-24-1.png" class="img-fluid figure-img" width="672"></p>
+</figure>
+</div>
+</div>
+</div>
+</section>
+<section id="discussion-1" class="level3">
+<h3 class="anchored" data-anchor-id="discussion-1">Discussion</h3>
+<p>The predicted distribution looks plausible: walk dominates (~126k points), followed by bus (~42k), then bike (~38k), car (~22k), subway (~10k) and last train as the rarest mode (~3k). This mirrors a similar class proportion as in the labelled data, which is a good sign. The model isn’t collapsing everything into one or two classes.</p>
+</section>
+</section>
+<section id="reflection" class="level2">
+<h2 class="anchored" data-anchor-id="reflection">Reflection</h2>
+<p>This task asked us to classify transportation modes at the individual GPS point level, a step up from the per-segment approach in the minimal example. This is a genuinely harder problem: smoothing over segments hides GPS noise and produces clean features, while raw per-point values are messy and overlapping between classes. Despite this, the Random Forest reaches 64.2% accuracy and a Macro F1 of 0.58, which I think is a decent result given the constraints. The feature engineering turned out to be the most important part. Speed alone gets you surprisingly far, but the multi-scale sinuosity (5/11/21 points) and the stop duration feature add real value. They capture the shape and rhythm of movement that speed can’t express. The variable importance plot confirms this: speed_mean_5 leads, but sinuosity_21 and steplength follow closely. The biggest limitation is that all features are purely kinematic. Bus and car move in very similar ways, and without knowing where someone is (near a bus stop? on a highway?) the model simply can’t tell them apart reliably. This is a gap that could be filled with the additional necessary data. The train class is also tricky. With only ~2’800 unique training points, the model doesn’t see enough variety even with upsampling. For this Exercise I had some time constraints and therefore kept my models rather simple. With more time I’d try a Random Forest with more trees and tuned hyperparameters (for example via Grid search), or other more complex machine learning models. Post-processing the predictions with temporal smoothing (majority vote within a sliding window per track) could also help reduce label flickering. And of course, SMOTE instead of simple oversampling might give the rare classes a better chance. Over all I am happy with the results as they show even with a simple model, decent results are possible.</p>
+</section>
+</section>
+<section id="use-of-ai" class="level1">
+<h1>Use of AI</h1>
+<p>I tried to solve the tasks mostly without the help of AI, but I used Claude to correct my solutions and improve some of my code if I was stuck or unsure. At the beginning i had some strange issue with the ranger library, which I was then able to resolve with the help of Claude.</p>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+  window.document.addEventListener("DOMContentLoaded", function (event) {
+    const icon = "";
+    const anchorJS = new window.AnchorJS();
+    anchorJS.options = {
+      placement: 'right',
+      icon: icon
+    };
+    anchorJS.add('.anchored');
+    const isCodeAnnotation = (el) => {
+      for (const clz of el.classList) {
+        if (clz.startsWith('code-annotation-')) {                     
+          return true;
+        }
+      }
+      return false;
+    }
+    const onCopySuccess = function(e) {
+      // button target
+      const button = e.trigger;
+      // don't keep focus
+      button.blur();
+      // flash "checked"
+      button.classList.add('code-copy-button-checked');
+      var currentTitle = button.getAttribute("title");
+      button.setAttribute("title", "Copied!");
+      let tooltip;
+      if (window.bootstrap) {
+        button.setAttribute("data-bs-toggle", "tooltip");
+        button.setAttribute("data-bs-placement", "left");
+        button.setAttribute("data-bs-title", "Copied!");
+        tooltip = new bootstrap.Tooltip(button, 
+          { trigger: "manual", 
+            customClass: "code-copy-button-tooltip",
+            offset: [0, -8]});
+        tooltip.show();    
+      }
+      setTimeout(function() {
+        if (tooltip) {
+          tooltip.hide();
+          button.removeAttribute("data-bs-title");
+          button.removeAttribute("data-bs-toggle");
+          button.removeAttribute("data-bs-placement");
+        }
+        button.setAttribute("title", currentTitle);
+        button.classList.remove('code-copy-button-checked');
+      }, 1000);
+      // clear code selection
+      e.clearSelection();
+    }
+    const getTextToCopy = function(trigger) {
+      const outerScaffold = trigger.parentElement.cloneNode(true);
+      const codeEl = outerScaffold.querySelector('code');
+      for (const childEl of codeEl.children) {
+        if (isCodeAnnotation(childEl)) {
+          childEl.remove();
+        }
+      }
+      return codeEl.innerText;
+    }
+    const clipboard = new window.ClipboardJS('.code-copy-button:not([data-in-quarto-modal])', {
+      text: getTextToCopy
+    });
+    clipboard.on('success', onCopySuccess);
+    if (window.document.getElementById('quarto-embedded-source-code-modal')) {
+      const clipboardModal = new window.ClipboardJS('.code-copy-button[data-in-quarto-modal]', {
+        text: getTextToCopy,
+        container: window.document.getElementById('quarto-embedded-source-code-modal')
+      });
+      clipboardModal.on('success', onCopySuccess);
+    }
+      var localhostRegex = new RegExp(/^(?:http|https):\/\/localhost\:?[0-9]*\//);
+      var mailtoRegex = new RegExp(/^mailto:/);
+        var filterRegex = new RegExp('/' + window.location.host + '/');
+      var isInternal = (href) => {
+          return filterRegex.test(href) || localhostRegex.test(href) || mailtoRegex.test(href);
+      }
+      // Inspect non-navigation links and adorn them if external
+     var links = window.document.querySelectorAll('a[href]:not(.nav-link):not(.navbar-brand):not(.toc-action):not(.sidebar-link):not(.sidebar-item-toggle):not(.pagination-link):not(.no-external):not([aria-hidden]):not(.dropdown-item):not(.quarto-navigation-tool):not(.about-link)');
+      for (var i=0; i<links.length; i++) {
+        const link = links[i];
+        if (!isInternal(link.href)) {
+          // undo the damage that might have been done by quarto-nav.js in the case of
+          // links that we want to consider external
+          if (link.dataset.originalHref !== undefined) {
+            link.href = link.dataset.originalHref;
+          }
+        }
+      }
+    function tippyHover(el, contentFn, onTriggerFn, onUntriggerFn) {
+      const config = {
+        allowHTML: true,
+        maxWidth: 500,
+        delay: 100,
+        arrow: false,
+        appendTo: function(el) {
+            return el.parentElement;
+        },
+        interactive: true,
+        interactiveBorder: 10,
+        theme: 'quarto',
+        placement: 'bottom-start',
+      };
+      if (contentFn) {
+        config.content = contentFn;
+      }
+      if (onTriggerFn) {
+        config.onTrigger = onTriggerFn;
+      }
+      if (onUntriggerFn) {
+        config.onUntrigger = onUntriggerFn;
+      }
+      window.tippy(el, config); 
+    }
+    const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+    for (var i=0; i<noterefs.length; i++) {
+      const ref = noterefs[i];
+      tippyHover(ref, function() {
+        // use id or data attribute instead here
+        let href = ref.getAttribute('data-footnote-href') || ref.getAttribute('href');
+        try { href = new URL(href).hash; } catch {}
+        const id = href.replace(/^#\/?/, "");
+        const note = window.document.getElementById(id);
+        if (note) {
+          return note.innerHTML;
+        } else {
+          return "";
+        }
+      });
+    }
+    const xrefs = window.document.querySelectorAll('a.quarto-xref');
+    const processXRef = (id, note) => {
+      // Strip column container classes
+      const stripColumnClz = (el) => {
+        el.classList.remove("page-full", "page-columns");
+        if (el.children) {
+          for (const child of el.children) {
+            stripColumnClz(child);
+          }
+        }
+      }
+      stripColumnClz(note)
+      if (id === null || id.startsWith('sec-')) {
+        // Special case sections, only their first couple elements
+        const container = document.createElement("div");
+        if (note.children && note.children.length > 2) {
+          container.appendChild(note.children[0].cloneNode(true));
+          for (let i = 1; i < note.children.length; i++) {
+            const child = note.children[i];
+            if (child.tagName === "P" && child.innerText === "") {
+              continue;
+            } else {
+              container.appendChild(child.cloneNode(true));
+              break;
+            }
+          }
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(container);
+          }
+          return container.innerHTML
+        } else {
+          if (window.Quarto?.typesetMath) {
+            window.Quarto.typesetMath(note);
+          }
+          return note.innerHTML;
+        }
+      } else {
+        // Remove any anchor links if they are present
+        const anchorLink = note.querySelector('a.anchorjs-link');
+        if (anchorLink) {
+          anchorLink.remove();
+        }
+        if (window.Quarto?.typesetMath) {
+          window.Quarto.typesetMath(note);
+        }
+        if (note.classList.contains("callout")) {
+          return note.outerHTML;
+        } else {
+          return note.innerHTML;
+        }
+      }
+    }
+    for (var i=0; i<xrefs.length; i++) {
+      const xref = xrefs[i];
+      tippyHover(xref, undefined, function(instance) {
+        instance.disable();
+        let url = xref.getAttribute('href');
+        let hash = undefined; 
+        if (url.startsWith('#')) {
+          hash = url;
+        } else {
+          try { hash = new URL(url).hash; } catch {}
+        }
+        if (hash) {
+          const id = hash.replace(/^#\/?/, "");
+          const note = window.document.getElementById(id);
+          if (note !== null) {
+            try {
+              const html = processXRef(id, note.cloneNode(true));
+              instance.setContent(html);
+            } finally {
+              instance.enable();
+              instance.show();
+            }
+          } else {
+            // See if we can fetch this
+            fetch(url.split('#')[0])
+            .then(res => res.text())
+            .then(html => {
+              const parser = new DOMParser();
+              const htmlDoc = parser.parseFromString(html, "text/html");
+              const note = htmlDoc.getElementById(id);
+              if (note !== null) {
+                const html = processXRef(id, note);
+                instance.setContent(html);
+              } 
+            }).finally(() => {
+              instance.enable();
+              instance.show();
+            });
+          }
+        } else {
+          // See if we can fetch a full url (with no hash to target)
+          // This is a special case and we should probably do some content thinning / targeting
+          fetch(url)
+          .then(res => res.text())
+          .then(html => {
+            const parser = new DOMParser();
+            const htmlDoc = parser.parseFromString(html, "text/html");
+            const note = htmlDoc.querySelector('main.content');
+            if (note !== null) {
+              // This should only happen for chapter cross references
+              // (since there is no id in the URL)
+              // remove the first header
+              if (note.children.length > 0 && note.children[0].tagName === "HEADER") {
+                note.children[0].remove();
+              }
+              const html = processXRef(null, note);
+              instance.setContent(html);
+            } 
+          }).finally(() => {
+            instance.enable();
+            instance.show();
+          });
+        }
+      }, function(instance) {
+      });
+    }
+        let selectedAnnoteEl;
+        const selectorForAnnotation = ( cell, annotation) => {
+          let cellAttr = 'data-code-cell="' + cell + '"';
+          let lineAttr = 'data-code-annotation="' +  annotation + '"';
+          const selector = 'span[' + cellAttr + '][' + lineAttr + ']';
+          return selector;
+        }
+        const selectCodeLines = (annoteEl) => {
+          const doc = window.document;
+          const targetCell = annoteEl.getAttribute("data-target-cell");
+          const targetAnnotation = annoteEl.getAttribute("data-target-annotation");
+          const annoteSpan = window.document.querySelector(selectorForAnnotation(targetCell, targetAnnotation));
+          const lines = annoteSpan.getAttribute("data-code-lines").split(",");
+          const lineIds = lines.map((line) => {
+            return targetCell + "-" + line;
+          })
+          let top = null;
+          let height = null;
+          let parent = null;
+          if (lineIds.length > 0) {
+              //compute the position of the single el (top and bottom and make a div)
+              const el = window.document.getElementById(lineIds[0]);
+              top = el.offsetTop;
+              height = el.offsetHeight;
+              parent = el.parentElement.parentElement;
+            if (lineIds.length > 1) {
+              const lastEl = window.document.getElementById(lineIds[lineIds.length - 1]);
+              const bottom = lastEl.offsetTop + lastEl.offsetHeight;
+              height = bottom - top;
+            }
+            if (top !== null && height !== null && parent !== null) {
+              // cook up a div (if necessary) and position it 
+              let div = window.document.getElementById("code-annotation-line-highlight");
+              if (div === null) {
+                div = window.document.createElement("div");
+                div.setAttribute("id", "code-annotation-line-highlight");
+                div.style.position = 'absolute';
+                parent.appendChild(div);
+              }
+              div.style.top = top - 2 + "px";
+              div.style.height = height + 4 + "px";
+              div.style.left = 0;
+              let gutterDiv = window.document.getElementById("code-annotation-line-highlight-gutter");
+              if (gutterDiv === null) {
+                gutterDiv = window.document.createElement("div");
+                gutterDiv.setAttribute("id", "code-annotation-line-highlight-gutter");
+                gutterDiv.style.position = 'absolute';
+                const codeCell = window.document.getElementById(targetCell);
+                const gutter = codeCell.querySelector('.code-annotation-gutter');
+                gutter.appendChild(gutterDiv);
+              }
+              gutterDiv.style.top = top - 2 + "px";
+              gutterDiv.style.height = height + 4 + "px";
+            }
+            selectedAnnoteEl = annoteEl;
+          }
+        };
+        const unselectCodeLines = () => {
+          const elementsIds = ["code-annotation-line-highlight", "code-annotation-line-highlight-gutter"];
+          elementsIds.forEach((elId) => {
+            const div = window.document.getElementById(elId);
+            if (div) {
+              div.remove();
+            }
+          });
+          selectedAnnoteEl = undefined;
+        };
+          // Handle positioning of the toggle
+      window.addEventListener(
+        "resize",
+        throttle(() => {
+          elRect = undefined;
+          if (selectedAnnoteEl) {
+            selectCodeLines(selectedAnnoteEl);
+          }
+        }, 10)
+      );
+      function throttle(fn, ms) {
+      let throttle = false;
+      let timer;
+        return (...args) => {
+          if(!throttle) { // first call gets through
+              fn.apply(this, args);
+              throttle = true;
+          } else { // all the others get throttled
+              if(timer) clearTimeout(timer); // cancel #2
+              timer = setTimeout(() => {
+                fn.apply(this, args);
+                timer = throttle = false;
+              }, ms);
+          }
+        };
+      }
+        // Attach click handler to the DT
+        const annoteDls = window.document.querySelectorAll('dt[data-target-cell]');
+        for (const annoteDlNode of annoteDls) {
+          annoteDlNode.addEventListener('click', (event) => {
+            const clickedEl = event.target;
+            if (clickedEl !== selectedAnnoteEl) {
+              unselectCodeLines();
+              const activeEl = window.document.querySelector('dt[data-target-cell].code-annotation-active');
+              if (activeEl) {
+                activeEl.classList.remove('code-annotation-active');
+              }
+              selectCodeLines(clickedEl);
+              clickedEl.classList.add('code-annotation-active');
+            } else {
+              // Unselect the line
+              unselectCodeLines();
+              clickedEl.classList.remove('code-annotation-active');
+            }
+          });
+        }
+    const findCites = (el) => {
+      const parentEl = el.parentElement;
+      if (parentEl) {
+        const cites = parentEl.dataset.cites;
+        if (cites) {
+          return {
+            el,
+            cites: cites.split(' ')
+          };
+        } else {
+          return findCites(el.parentElement)
+        }
+      } else {
+        return undefined;
+      }
+    };
+    var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+    for (var i=0; i<bibliorefs.length; i++) {
+      const ref = bibliorefs[i];
+      const citeInfo = findCites(ref);
+      if (citeInfo) {
+        tippyHover(citeInfo.el, function() {
+          var popup = window.document.createElement('div');
+          citeInfo.cites.forEach(function(cite) {
+            var citeDiv = window.document.createElement('div');
+            citeDiv.classList.add('hanging-indent');
+            citeDiv.classList.add('csl-entry');
+            var biblioDiv = window.document.getElementById('ref-' + cite);
+            if (biblioDiv) {
+              citeDiv.innerHTML = biblioDiv.innerHTML;
+            }
+            popup.appendChild(citeDiv);
+          });
+          return popup.innerHTML;
+        });
+      }
+    }
+  });
+  </script>
+</div> <!-- /content -->
+
+
+
+
+</body></html>
