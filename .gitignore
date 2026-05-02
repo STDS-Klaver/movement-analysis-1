@@ -1,2 +1,7 @@
 # Data folder
 data/
+
+# R history
+.Rhistory
+/.quarto/
+**/*.quarto_ipynb
